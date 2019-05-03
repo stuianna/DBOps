@@ -140,8 +140,9 @@ class DBOps():
         try:
             entry = cur.execute("SELECT * FROM {} ORDER BY Timestamp DESC LIMIT 1".format(table))
         except:
-            #Table didn't exist
+            logging.error('Cannot get last time entry from {}. Does the table have a timestamp column?'.format(table))
             return None
+
         lastEntry = entry.fetchall()
         if len(lastEntry) > 0:
             return lastEntry
@@ -153,24 +154,34 @@ class DBOps():
 
         cur = self.con.cursor()
         try:
-            return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} BETWEEN {} AND {}".format(table,column,minimum,maximum)).fetchall(),columns=self.getColumnNames(table))
+            return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} BETWEEN {} AND {}".format(table,
+                column,minimum,maximum)).fetchall(),columns=self.getColumnNames(table))
         except:
-            #Table didn't exist
+            logging.error('Cannot query rows from {}. Requested column: {}. Availabe: {}?'.format(table,
+                column,self.getColumnNames))
             return None
+
 
     def getRow(self,table,column,query):
 
         cur = self.con.cursor()
-        if type(query) is str:
-            return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} LIKE '{}'".format(table,column,query)).fetchall(),columns=self.getColumnNames(table))
-        else:
-            return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} = {}".format(table,column,query)).fetchall(),columns=self.getColumnNames(table))
+        try:
+            if type(query) is str:
+                return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} LIKE '{}'".format(table,
+                    column,query)).fetchall(),columns=self.getColumnNames(table))
+            else:
+                return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} = {}".format(table,
+                    column,query)).fetchall(),columns=self.getColumnNames(table))
+        except:
+            logging.error('Cannot query rows from {}. Requested column: {}. Availabe: {}?'.format(table,
+                column,self.getColumnNames))
 
     def getLastRows(self,table,maximum):
 
         cur = self.con.cursor()
         try:
-            return pd.DataFrame(cur.execute("SELECT * FROM {} ORDER BY Timestamp DESC LIMIT {}".format(table,maximum)).fetchall(),columns=self.getColumnNames(table))
+            return pd.DataFrame(cur.execute("SELECT * FROM {} ORDER BY Timestamp DESC LIMIT {}".format(table,
+                maximum)).fetchall(),columns=self.getColumnNames(table))
         except:
             #Table didn't exist
             logging.error('Could not get last rows from {}, does the table have a timestamp column?'.format(table))
@@ -180,8 +191,11 @@ class DBOps():
 
         cur = self.con.cursor()
         try:
-            cur.execute("DELETE FROM {} WHERE {} BETWEEN {} AND {}".format(table,column,minimum,maximum))
+            cur.execute("DELETE FROM {} WHERE {} BETWEEN {} AND {}".format(table,
+                column,minimum,maximum))
         except:
+            logging.error('Cannot remove rows from {}. Requested column: {}. Availabe: {}?'.format(table,
+                column,self.getColumnNames))
             #Table didn't exist
             return None
         self.con.commit()
