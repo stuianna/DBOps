@@ -1,9 +1,64 @@
+"""
+DBOps: Single class module for working with sqlite3 databases.
+Created April 2019
+Author Stuart Ianna
+"""
+
 import sqlite3 as sq
 import sys
 import pandas as pd
 import logging
 
 class DBOps():
+    """Class for working with a single database
+
+    The logging module is used to log errors and warnings.
+
+    Typical Usage:
+
+    # Create a class instance for a single database
+    database = DBOps('database.db')
+
+    # Add a table to the database
+    database.createTableIfNotExist('my_table','column_1, column_2 column_3')
+
+    # Get all the tables in the database
+    database.getTableNames()
+
+    # Add an entry to the database
+    database.append('my_table',['col_entry_1, col_entry_2, col_entry_3])
+
+    # Return the table as a Pandas Dataframe
+    database.table2Df('my_table')
+
+    # Return a row based on a column query
+    # TODO
+
+    Attributes:
+        - con:sqlite3.Connection - Database class object
+
+    Methods:
+        - createTableIfNotExist(tableName,columns) - create a new table in the
+            connected database, columns are a comma seperated string.
+        - removeTable(tableName) - remove the passed table from the database.
+        - getTableNames - Returns a list of all tables in the database.
+        - getColumnNames(tableName) - Get a list of all column names contained
+            in the passed table.
+        - printTable(tableName) - print the passed table to stdout.
+        - table2Df(tableName) - return the complete table as a dataframe.
+        - getLastTimeEntry(table) - get the latest time entry in a table. Note:
+            This assumes the table contains a column labeled 'Timestamp'
+        - getRowRange(table,column,minimum,maximum) Returns a dataframe of entries
+            whose column matched the specific values.
+        - getLastRows(table,maximum) - returns up to the maximum rows as a dataframe.
+            This assumes there is a column named Timestamp.
+        - removeRowRange(table,column,minimum,maximum) - remove rows from the
+            table where the column values match.
+        - append(table,values) - add an entry to the database, value are passed as 
+            a list. Note: the number of items in the list must match the number
+            of columns.
+
+    """
 
     def __init__(self,db_name):
 
@@ -25,9 +80,11 @@ class DBOps():
         try:
             cur.execute("DROP TABLE {}".format(tableName))
         except:
-            #Table didn't exist
-            return None
+            logging.error('Cannot remove table: {}. Does not exist'.format(tableName))
+            return False
         self.con.commit()
+
+        return True
 
     def getTableNames(self):
 
