@@ -20,7 +20,7 @@ class DBOps():
     database = DBOps('database.db')
 
     # Add a table to the database
-    database.createTableIfNotExist('my_table','column_1, column_2 column_3')
+    database.createTableIfNotExist('my_table','column_1 NUMERIC, column_2 TEXT, column_3 TEXT')
 
     # Get all the tables in the database
     database.getTableNames()
@@ -130,7 +130,7 @@ class DBOps():
         except:
             #Table didn't exist
             return None
-        df = pd.DataFrame(cur.fetchall())
+        df = pd.DataFrame(cur.fetchall(),columns=self.getColumnNames(table))
         return df
 
     #This assumes that the table contains a column named "Timestamp"
@@ -153,16 +153,24 @@ class DBOps():
 
         cur = self.con.cursor()
         try:
-            return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} BETWEEN {} AND {}".format(table,column,minimum,maximum)).fetchall())
+            return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} BETWEEN {} AND {}".format(table,column,minimum,maximum)).fetchall(),columns=self.getColumnNames(table))
         except:
             #Table didn't exist
             return None
+
+    def getRow(self,table,column,query):
+
+        cur = self.con.cursor()
+        if type(query) is str:
+            return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} LIKE '{}'".format(table,column,query)).fetchall(),columns=self.getColumnNames(table))
+        else:
+            return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} = {}".format(table,column,query)).fetchall(),columns=self.getColumnNames(table))
 
     def getLastRows(self,table,maximum):
 
         cur = self.con.cursor()
         try:
-            return pd.DataFrame(cur.execute("SELECT * FROM {} ORDER BY Timestamp DESC LIMIT {}".format(table,maximum)).fetchall())
+            return pd.DataFrame(cur.execute("SELECT * FROM {} ORDER BY Timestamp DESC LIMIT {}".format(table,maximum)).fetchall(),columns=self.getColumnNames(table))
         except:
             #Table didn't exist
             logging.error('Could not get last rows from {}, does the table have a timestamp column?'.format(table))
