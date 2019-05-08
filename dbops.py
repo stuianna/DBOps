@@ -26,13 +26,13 @@ class DBOps():
     database.getTableNames()
 
     # Add an entry to the database
-    database.append('my_table',['col_entry_1, col_entry_2, col_entry_3])
+    database.append('my_table',['col_entry_1, col_entry_2, col_entry_3'])
 
     # Return the table as a Pandas Dataframe
     database.table2Df('my_table')
 
-    # Return a row based on a column query
-    # TODO
+    # Return a row based on a column query, returns entire matching row
+    database.getRow('my_table','column_1','col_entry_1');
 
     Attributes:
         - con:sqlite3.Connection - Database class object
