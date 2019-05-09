@@ -26,7 +26,7 @@ class DBOps():
     database.getTableNames()
 
     # Add an entry to the database
-    database.append('my_table',['col_entry_1, col_entry_2, col_entry_3'])
+    database.append('my_table',[13, 'col_entry_2', 'col_entry_3'])
 
     # Return the table as a Pandas Dataframe
     database.table2Df('my_table')
