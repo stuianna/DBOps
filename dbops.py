@@ -8,6 +8,9 @@ import sqlite3 as sq
 import sys
 import pandas as pd
 import logging
+import os
+
+log = logging.getLogger(__name__)
 
 class DBOps():
     """Class for working with a single database
@@ -47,14 +50,14 @@ class DBOps():
         - printTable(tableName) - print the passed table to stdout.
         - table2Df(tableName) - return the complete table as a dataframe.
         - getLastTimeEntry(table) - get the latest time entry in a table. Note:
-            This assumes the table contains a column labeled 'Timestamp'
+            This assumes the table contains a column labeled 'timestamp'
         - getRowRange(table,column,minimum,maximum) Returns a dataframe of entries
             whose column matched the specific values.
         - getLastRows(table,maximum) - returns up to the maximum rows as a dataframe.
-            This assumes there is a column named Timestamp.
+            This assumes there is a column named timestamp.
         - removeRowRange(table,column,minimum,maximum) - remove rows from the
             table where the column values match.
-        - append(table,values) - add an entry to the database, value are passed as 
+        - append(table,values) - add an entry to the database, value are passed as
             a list. Note: the number of items in the list must match the number
             of columns.
 
@@ -62,10 +65,20 @@ class DBOps():
 
     def __init__(self,db_name):
 
+        self.__dbName = db_name
+        self.createDatabase()
+
+    def createDatabase(self):
         try:
-            self.con = sq.connect(db_name)
+            self.con = sq.connect(self.__dbName)
         except:
-            logging.error('Cannot connect to database {}'.format(db_name))
+            log.error('Cannot connect to database {}'.format(self.__dbName))
+
+    def exists(self):
+        if os.path.exists(self.__dbName):
+            return True
+        return False
+
 
     def createTableIfNotExist(self,tableName,columns):
 
@@ -80,7 +93,7 @@ class DBOps():
         try:
             cur.execute("DROP TABLE {}".format(tableName))
         except:
-            logging.error('Cannot remove table: {}. Does not exist'.format(tableName))
+            log.error('Cannot remove table: {}. Does not exist'.format(tableName))
             return False
         self.con.commit()
 
@@ -133,14 +146,14 @@ class DBOps():
         df = pd.DataFrame(cur.fetchall(),columns=self.getColumnNames(table))
         return df
 
-    #This assumes that the table contains a column named "Timestamp"
+    #This assumes that the table contains a column named "timestamp"
     def getLastTimeEntry(self,table):
 
         cur = self.con.cursor()
         try:
-            entry = cur.execute("SELECT * FROM {} ORDER BY Timestamp DESC LIMIT 1".format(table))
+            entry = cur.execute("SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(table))
         except:
-            logging.error('Cannot get last time entry from {}. Does the table have a timestamp column?'.format(table))
+            log.error('Cannot get last time entry from {}. Does the table have a timestamp column?'.format(table))
             return None
 
         lastEntry = entry.fetchall()
@@ -157,7 +170,7 @@ class DBOps():
             return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} BETWEEN {} AND {}".format(table,
                 column,minimum,maximum)).fetchall(),columns=self.getColumnNames(table))
         except:
-            logging.error('Cannot query rows from {}. Requested column: {}. Availabe: {}?'.format(table,
+            log.error('Cannot query rows from {}. Requested column: {}. Availabe: {}?'.format(table,
                 column,self.getColumnNames))
             return None
 
@@ -173,18 +186,18 @@ class DBOps():
                 return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} = {}".format(table,
                     column,query)).fetchall(),columns=self.getColumnNames(table))
         except:
-            logging.error('Cannot query rows from {}. Requested column: {}. Availabe: {}?'.format(table,
+            log.error('Cannot query rows from {}. Requested column: {}. Availabe: {}?'.format(table,
                 column,self.getColumnNames))
 
     def getLastRows(self,table,maximum):
 
         cur = self.con.cursor()
         try:
-            return pd.DataFrame(cur.execute("SELECT * FROM {} ORDER BY Timestamp DESC LIMIT {}".format(table,
+            return pd.DataFrame(cur.execute("SELECT * FROM {} ORDER BY timestamp DESC LIMIT {}".format(table,
                 maximum)).fetchall(),columns=self.getColumnNames(table))
         except:
             #Table didn't exist
-            logging.error('Could not get last rows from {}, does the table have a timestamp column?'.format(table))
+            log.error('Could not get last rows from {}, does the table have a timestamp column?'.format(table))
             return None
 
     def removeRowRange(self,table,column,minimum,maximum):
@@ -194,7 +207,7 @@ class DBOps():
             cur.execute("DELETE FROM {} WHERE {} BETWEEN {} AND {}".format(table,
                 column,minimum,maximum))
         except:
-            logging.error('Cannot remove rows from {}. Requested column: {}. Availabe: {}?'.format(table,
+            log.error('Cannot remove rows from {}. Requested column: {}. Availabe: {}?'.format(table,
                 column,self.getColumnNames))
             #Table didn't exist
             return None
@@ -207,95 +220,95 @@ class DBOps():
         cur = self.con.cursor()
         if type(values) is not list:
             cur.execute("INSERT INTO {} values((?))".format(table),(values,))
-        elif len(values) is 2:
+        elif len(values) == 2:
             cur.execute("INSERT INTO {} values((?),(?))".format(table),(values[0],values[1],))
-        elif len(values) is 3:
+        elif len(values) == 3:
             cur.execute("INSERT INTO {} values((?),(?),(?))".format(table),(values[0],values[1],values[2],))
-        elif len(values) is 4:
+        elif len(values) == 4:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],))
-        elif len(values) is 5:
+        elif len(values) == 5:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],))
-        elif len(values) is 6:
+        elif len(values) == 6:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],))
-        elif len(values) is 7:
+        elif len(values) == 7:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],))
-        elif len(values) is 8:
+        elif len(values) == 8:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],))
-        elif len(values) is 9:
+        elif len(values) == 9:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],))
-        elif len(values) is 10:
+        elif len(values) == 10:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],))
-        elif len(values) is 11:
+        elif len(values) == 11:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],))
-        elif len(values) is 12:
+        elif len(values) == 12:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],))
-        elif len(values) is 13:
+        elif len(values) == 13:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],))
-        elif len(values) is 14:
+        elif len(values) == 14:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],))
-        elif len(values) is 15:
+        elif len(values) == 15:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],))
-        elif len(values) is 16:
+        elif len(values) == 16:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],))
-        elif len(values) is 17:
+        elif len(values) == 17:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],))
-        elif len(values) is 18:
+        elif len(values) == 18:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],))
-        elif len(values) is 19:
+        elif len(values) == 19:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],))
-        elif len(values) is 20:
+        elif len(values) == 20:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],))
-        elif len(values) is 21:
+        elif len(values) == 21:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],))
-        elif len(values) is 22:
+        elif len(values) == 22:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],))
-        elif len(values) is 23:
+        elif len(values) == 23:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],))
-        elif len(values) is 24:
+        elif len(values) == 24:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],))
-        elif len(values) is 25:
+        elif len(values) == 25:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],))
-        elif len(values) is 26:
+        elif len(values) == 26:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],))
-        elif len(values) is 27:
+        elif len(values) == 27:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],))
-        elif len(values) is 28:
+        elif len(values) == 28:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],))
-        elif len(values) is 29:
+        elif len(values) == 29:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],))
-        elif len(values) is 30:
+        elif len(values) == 30:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],))
-        elif len(values) is 31:
+        elif len(values) == 31:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],))
-        elif len(values) is 32:
+        elif len(values) == 32:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],))
-        elif len(values) is 33:
+        elif len(values) == 33:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],))
-        elif len(values) is 34:
+        elif len(values) == 34:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],))
-        elif len(values) is 35:
+        elif len(values) == 35:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],))
-        elif len(values) is 36:
+        elif len(values) == 36:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],))
-        elif len(values) is 37:
+        elif len(values) == 37:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],))
-        elif len(values) is 38:
+        elif len(values) == 38:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],values[37],))
-        elif len(values) is 39:
+        elif len(values) == 39:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],values[37],values[38],))
-        elif len(values) is 40:
+        elif len(values) == 40:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],values[37],values[38],values[39],))
-        elif len(values) is 41:
+        elif len(values) == 41:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],values[37],values[38],values[39],values[40],))
-        elif len(values) is 42:
+        elif len(values) == 42:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],values[37],values[38],values[39],values[40],values[41],))
-        elif len(values) is 43:
+        elif len(values) == 43:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],values[37],values[38],values[39],values[40],values[41],values[42],))
-        elif len(values) is 44:
+        elif len(values) == 44:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],values[37],values[38],values[39],values[40],values[41],values[42],values[43],))
-        elif len(values) is 45:
+        elif len(values) == 45:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],values[37],values[38],values[39],values[40],values[41],values[42],values[43],values[44],))
-        elif len(values) is 46:
+        elif len(values) == 46:
             cur.execute("INSERT INTO {} values((?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?))".format(table),(values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],values[12],values[13],values[14],values[15],values[16],values[17],values[18],values[19],values[20],values[21],values[22],values[23],values[24],values[25],values[26],values[27],values[28],values[29],values[30],values[31],values[32],values[33],values[34],values[35],values[36],values[37],values[38],values[39],values[40],values[41],values[42],values[43],values[44],values[45],))
 
         self.con.commit()
