@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/stuianna/DBOps.svg?branch=master)](https://travis-ci.org/stuianna/DBOps)
+![Codecov](https://img.shields.io/codecov/c/gh/stuianna/DBOps)
+![GitHub](https://img.shields.io/github/license/stuianna/DBOps)
+
 # DBOps
 
 Python class helper for sqlite databases.
