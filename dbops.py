@@ -268,18 +268,18 @@ class DBOps():
         if type(values) is not list:
             log.error("Trying to insert data into table {} \
                         which is not of type list. Passed type {}".format(
-                            table,type(values)))
+                            table, type(values)))
             return False
 
         tupleList = tuple(values)
         placeHolder = ",".join(["(?)" for i in range(len(values))])
         cur = self.con.cursor()
         try:
-            cur.execute("INSERT INTO {} values({})".format(table,placeHolder),tupleList)
+            cur.execute("INSERT INTO {} values({})".format(table, placeHolder), tupleList)
         except sq.OperationalError as e:
             log.error("Exception {} when inserting data into table {}. \
                       Possible data length mismatch, invalid table".format(
-                e,table))
+                e, table))
             return False
         self.con.commit()
         return True

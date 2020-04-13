@@ -213,13 +213,14 @@ class DBOpsTesting(unittest.TestCase):
         newtablename = 'test_table'
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
-        data = [123456,43.3]
+        data = [123456, 43.3]
 
-        inserted = self.db.append(newtablename,data)
-        insertedData = self.db.con.cursor().execute("SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
+        inserted = self.db.append(newtablename, data)
+        insertedData = self.db.con.cursor().execute(
+            "SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
 
-        self.assertIs(inserted,True)
-        self.assertEqual(tuple(data),insertedData)
+        self.assertIs(inserted, True)
+        self.assertEqual(tuple(data), insertedData)
 
     def test_inserting_row_with_many_columns_passed_data_is_list(self):
         newtablename = 'test_table'
@@ -230,11 +231,12 @@ class DBOpsTesting(unittest.TestCase):
 
         self.db.createTableIfNotExist(newtablename, columns)
 
-        inserted = self.db.append(newtablename,data)
-        insertedData = self.db.con.cursor().execute("SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
+        inserted = self.db.append(newtablename, data)
+        insertedData = self.db.con.cursor().execute(
+            "SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
 
-        self.assertIs(inserted,True)
-        self.assertEqual(tuple(data),insertedData)
+        self.assertIs(inserted, True)
+        self.assertEqual(tuple(data), insertedData)
 
     def test_inserting_row_with_one_columns_passed_data_is_list(self):
         newtablename = 'test_table'
@@ -242,11 +244,12 @@ class DBOpsTesting(unittest.TestCase):
         self.db.createTableIfNotExist(newtablename, columns)
         data = [123456]
 
-        inserted = self.db.append(newtablename,data)
-        insertedData = self.db.con.cursor().execute("SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
+        inserted = self.db.append(newtablename, data)
+        insertedData = self.db.con.cursor().execute(
+            "SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
 
-        self.assertIs(inserted,True)
-        self.assertEqual(tuple(data),insertedData)
+        self.assertIs(inserted, True)
+        self.assertEqual(tuple(data), insertedData)
 
     def test_inserting_row_with_one_columns_passed_data_is_one_column_type_is_not_list(self):
         newtablename = 'test_table'
@@ -254,10 +257,11 @@ class DBOpsTesting(unittest.TestCase):
         self.db.createTableIfNotExist(newtablename, columns)
         data = 123456
 
-        inserted = self.db.append(newtablename,data)
-        insertedData = self.db.con.cursor().execute("SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
+        inserted = self.db.append(newtablename, data)
+        insertedData = self.db.con.cursor().execute(
+            "SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
 
-        self.assertIs(inserted,False)
+        self.assertIs(inserted, False)
 
     def test_inserting_data_of_length_which_doesnt_match_number_of_columns_in_table(self):
         newtablename = 'test_table'
@@ -265,22 +269,22 @@ class DBOpsTesting(unittest.TestCase):
         self.db.createTableIfNotExist(newtablename, columns)
         data = [123456]
 
-        inserted = self.db.append(newtablename,data)
-        self.assertIs(inserted,False)
+        inserted = self.db.append(newtablename, data)
+        self.assertIs(inserted, False)
 
     def test_inserting_data_into_table_which_hasnt_been_created(self):
 
         data = [123456]
-        inserted = self.db.append('invalid_table',data)
-        self.assertIs(inserted,False)
+        inserted = self.db.append('invalid_table', data)
+        self.assertIs(inserted, False)
 
     def test_appending_data_when_database_not_created(self):
 
         newtablename = 'notImportant'
         db = DBOps('/usr/test_db.sql')   # Bad db name
         data = [123456]
-        inserted = db.append(newtablename,data)
-        self.assertIs(inserted,False)
+        inserted = db.append(newtablename, data)
+        self.assertIs(inserted, False)
 
 if __name__ == '__main__':
     unittest.main()
