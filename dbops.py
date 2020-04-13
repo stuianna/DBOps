@@ -11,6 +11,10 @@ import os
 
 log = logging.getLogger(__name__)
 
+# TODO
+# Getting last entry should return a dictionary
+# Should be able to add entries as a dictionary
+
 
 class DBOps():
     """Class for working with a single database
@@ -152,16 +156,22 @@ class DBOps():
 
     def printTable(self, table):
 
+        if self.__checkDatabaseIsInitialised() is False:
+            return ''
+
         cur = self.con.cursor()
         try:
             for row in cur.execute("SELECT * FROM {}".format(table)):
                 print(row)
         except Exception as e:
-            logging.error("Exception {} when trying to print table\
+            logging.error("Exception {} when trying to print table \
                             {}".format(e, table))
             return None
 
     def table2Df(self, table):
+
+        if self.__checkDatabaseIsInitialised() is False:
+            return None
 
         cur = self.con.cursor()
         try:
@@ -175,6 +185,9 @@ class DBOps():
 
     # This assumes that the table contains a column named "timestamp"
     def getLastTimeEntry(self, table):
+
+        if self.__checkDatabaseIsInitialised() is False:
+            return None
 
         cur = self.con.cursor()
         try:
@@ -191,10 +204,14 @@ class DBOps():
         if len(lastEntry) > 0:
             return lastEntry
         else:
-            lastEntry = 0
-            return lastEntry
+            return dict()
 
+    #  Values equal to min and max are returned
+    #  Requesting between a range of strings returns None
     def getRowRange(self, table, column, minimum, maximum):
+
+        if self.__checkDatabaseIsInitialised() is False:
+            return None
 
         cur = self.con.cursor()
         try:
