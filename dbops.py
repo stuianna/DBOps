@@ -1,6 +1,5 @@
 """
 DBOps: Single class module for working with sqlite3 databases.
-Created April 2019
 Author Stuart Ianna
 """
 
@@ -14,6 +13,10 @@ log = logging.getLogger(__name__)
 # TODO
 # Getting last entry should return a dictionary
 # Should be able to add entries as a dictionary
+# Docstrings for functions
+# Update general docstring
+# Great module setup for packaging
+# Update readme
 
 
 class DBOps():
@@ -228,7 +231,12 @@ class DBOps():
                           table, column, self.getColumnNames, e))
             return None
 
+    # Returns empty dataframe if query not found
+    # Returns none if error occured
     def getRow(self, table, column, query):
+
+        if self.__checkDatabaseIsInitialised() is False:
+            return None
 
         cur = self.con.cursor()
         try:
@@ -247,8 +255,16 @@ class DBOps():
                       Requested column: {}. Availabe: {}?. \
                       Exception {}'.format(
                           table, column, self.getColumnNames, e))
+        return None
 
+    # No number return empty dataframe
+    # Negative number return whole data frame - number
+    # Non integer request return none
+    # Returns none if no timestamp column exists
     def getLastRows(self, table, maximum):
+
+        if self.__checkDatabaseIsInitialised() is False:
+            return None
 
         cur = self.con.cursor()
         try:
@@ -260,9 +276,17 @@ class DBOps():
                       Does the table have a timestamp column? \
                       Exception {}'.format(
                           table, e))
-            return None
+        return None
 
+    # Only returns false if an error occured
+    # Return faulse if min or maxis string
     def removeRowRange(self, table, column, minimum, maximum):
+
+        if self.__checkDatabaseIsInitialised() is False:
+            return False
+
+        if type(minimum) is str or type(maximum) is str:
+            return False
 
         cur = self.con.cursor()
         try:
@@ -274,8 +298,9 @@ class DBOps():
                       Requested column: {}. \
                       Availabe: {}?. Exception {}'.format(
                           table, column, self.getColumnNames, e))
-            return None
+            return False
         self.con.commit()
+        return True
 
     def append(self, table, values):
 

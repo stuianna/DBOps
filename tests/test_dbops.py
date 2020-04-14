@@ -674,6 +674,346 @@ class DBOpsTesting(unittest.TestCase):
         df = db.getRowRange(newtablename, 'value', 12, 89)
         self.assertIs(df, None)
 
+    def test_get_row_matching_value_when_value_exists(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = [123456, 43.3]
+        self.db.append(newtablename, data)
+        data = [1234567, 53.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 63.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 83.3]
+        self.db.append(newtablename, data)
+
+        df = self.db.getRow(newtablename, 'value', 63.3)
+
+        expectedDF = pd.DataFrame({"timestamp": [1234568],
+                                   'value': [63.3]})
+        pd.testing.assert_frame_equal(expectedDF, df)
+
+    def test_get_row_matching_value_when_value_is_duplicate(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = [123456, 43.3]
+        self.db.append(newtablename, data)
+        data = [1234567, 53.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 63.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 63.3]
+        self.db.append(newtablename, data)
+
+        df = self.db.getRow(newtablename, 'value', 63.3)
+
+        expectedDF = pd.DataFrame({"timestamp": [1234568, 1234568],
+                                   'value': [63.3, 63.3]})
+        pd.testing.assert_frame_equal(expectedDF, df)
+
+    def test_get_row_matching_value_when_value_doesnt_exist(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = [123456, 43.3]
+        self.db.append(newtablename, data)
+        data = [1234567, 53.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 63.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 63.3]
+        self.db.append(newtablename, data)
+
+        df = self.db.getRow(newtablename, 'value', 3.3)
+
+        self.assertEqual(len(df), 0)
+
+    def test_get_row_matching_value_when_value_is_string(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = [123456, '43.3']
+        self.db.append(newtablename, data)
+        data = [1234567, '53.3']
+        self.db.append(newtablename, data)
+        data = [1234568, '63.3']
+        self.db.append(newtablename, data)
+        data = [1234568, '63.3']
+        self.db.append(newtablename, data)
+
+        df = self.db.getRow(newtablename, 'value', '43.3')
+
+        expectedDF = pd.DataFrame({"timestamp": [123456],
+                                   'value': ['43.3']})
+        pd.testing.assert_frame_equal(expectedDF, df)
+
+    def test_get_row_matching_value_when_table_is_empty(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        df = self.db.getRow(newtablename, 'value', '43.3')
+        self.assertEqual(len(df), 0)
+
+    def test_get_row_matching_value_when_column_doesnt_exist(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        df = self.db.getRow(newtablename, 'doesnt_exist', '43.3')
+        self.assertIs(df, None)
+
+    def test_get_row_matching_value_when_table_doesnt_exist(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        df = self.db.getRow("doesnt_exist", 'value', '43.3')
+        self.assertIs(df, None)
+
+    def test_get_row_matching_value_when_table_doesnt_exist(self):
+
+        db = DBOps('/usr/test_db.sql')   # Bad db name
+
+        df = db.getRow("doesnt_exist", 'value', '43.3')
+        self.assertIs(df, None)
+
+    def test_get_last_rows_single_request(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = [123456, 43.3]
+        self.db.append(newtablename, data)
+        data = [1234567, 53.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 63.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 83.3]
+        self.db.append(newtablename, data)
+
+        df = self.db.getLastRows(newtablename, 1)
+
+        expectedDF = pd.DataFrame({"timestamp": [1234568],
+                                   'value': [63.3]})
+        pd.testing.assert_frame_equal(expectedDF, df)
+
+    def test_get_last_rows_multiple_request(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = [123456, 43.3]
+        self.db.append(newtablename, data)
+        data = [1234567, 53.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 63.3]
+        self.db.append(newtablename, data)
+        data = [1234569, 83.3]
+        self.db.append(newtablename, data)
+
+        df = self.db.getLastRows(newtablename, 2)
+
+        expectedDF = pd.DataFrame({"timestamp": [1234569, 1234568],
+                                   'value': [83.3, 63.3]})
+        pd.testing.assert_frame_equal(expectedDF, df)
+
+    def test_get_last_rows_zero_request(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = [1234569, 83.3]
+        self.db.append(newtablename, data)
+
+        df = self.db.getLastRows(newtablename, 0)
+        self.assertEqual(len(df), 0)
+
+    def test_get_last_rows_negative_request(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        self.insertFourUniqueEntries(newtablename)
+
+        df = self.db.getLastRows(newtablename, -1)
+        self.assertEqual(len(df), 4)
+
+    def test_get_last_rows_float_request(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        self.insertFourUniqueEntries(newtablename)
+
+        df = self.db.getLastRows(newtablename, 1.1)
+        self.assertEqual(df, None)
+
+    def test_get_last_rows_no_timestamp_column(self):
+
+        newtablename = 'test_table'
+        columns = "not_timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        self.insertFourUniqueEntries(newtablename)
+
+        df = self.db.getLastRows(newtablename, 1)
+        self.assertEqual(df, None)
+
+    def test_get_last_rows_table_doesnt_exist(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        self.insertFourUniqueEntries(newtablename)
+
+        df = self.db.getLastRows('not_a_table', 1)
+        self.assertEqual(df, None)
+
+    def test_get_last_rows_database_doesnt_exist(self):
+
+        db = DBOps('/usr/test_db.sql')   # Bad db name
+        self.insertFourUniqueEntries('not_important')
+        df = db.getLastRows('not_important', 1)
+        self.assertEqual(df, None)
+
+    def test_remove_row_range_in_middle(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+        self.insertFourUniqueEntries(newtablename)
+        removed = self.db.removeRowRange(newtablename, 'value', 44.3, 73.3)
+
+        expectedDF = pd.DataFrame({"timestamp": [123456, 1234569],
+                                   'value': [43.3, 83.3]})
+        df = self.db.table2Df(newtablename)
+        pd.testing.assert_frame_equal(expectedDF, df)
+        self.assertEqual(removed, True)
+
+    def test_remove_row_range_in_covering_all_entries(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+        self.insertFourUniqueEntries(newtablename)
+        removed = self.db.removeRowRange(newtablename, 'value', 14.3, 173.3)
+
+        df = self.db.table2Df(newtablename)
+
+        self.assertEqual(len(df), 0)
+        self.assertEqual(removed, True)
+
+    def test_remove_row_range_covering_no_entries(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+        self.insertFourUniqueEntries(newtablename)
+        removed = self.db.removeRowRange(newtablename, 'value', 114.3, 173.3)
+
+        df = self.db.table2Df(newtablename)
+        expectedDF = pd.DataFrame({"timestamp": [123456, 1234567, 1234568, 1234569],
+                                   'value': [43.3, 53.3, 63.3, 83.3]})
+
+        pd.testing.assert_frame_equal(expectedDF, df)
+        self.assertEqual(removed, True)
+
+    def test_remove_row_range_equal_to_one_entry(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+        self.insertFourUniqueEntries(newtablename)
+        removed = self.db.removeRowRange(newtablename, 'value', 63.3, 63.3)
+
+        df = self.db.table2Df(newtablename)
+        expectedDF = pd.DataFrame({"timestamp": [123456, 1234567, 1234569],
+                                   'value': [43.3, 53.3, 83.3]})
+
+        pd.testing.assert_frame_equal(expectedDF, df)
+        self.assertEqual(removed, True)
+
+    def test_remove_row_range_equal_to_one_entry(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+        data = [123456, '43.3']
+        self.db.append(newtablename, data)
+        removed = self.db.removeRowRange(newtablename, 'value', '23.3', '63.3')
+
+        df = self.db.table2Df(newtablename)
+        expectedDF = pd.DataFrame({"timestamp": [123456],
+                                   'value': ['43.3']})
+
+        pd.testing.assert_frame_equal(expectedDF, df)
+        self.assertEqual(removed, False)
+
+    def test_remove_row_range_table_doesnt_exist(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+        self.insertFourUniqueEntries(newtablename)
+        removed = self.db.removeRowRange("Bad_table", 'value', 63.3, 63.3)
+
+        df = self.db.table2Df(newtablename)
+        expectedDF = pd.DataFrame({"timestamp": [123456, 1234567, 1234568, 1234569],
+                                   'value': [43.3, 53.3, 63.3, 83.3]})
+
+        pd.testing.assert_frame_equal(expectedDF, df)
+        self.assertEqual(removed, False)
+
+    def test_remove_row_range_column_doesnt_exist(self):
+
+        newtablename = 'test_table'
+        columns = "timestamp, value"
+        self.db.createTableIfNotExist(newtablename, columns)
+        self.insertFourUniqueEntries(newtablename)
+        removed = self.db.removeRowRange(newtablename, 'value_not_a_column', 63.3, 63.3)
+
+        df = self.db.table2Df(newtablename)
+        expectedDF = pd.DataFrame({"timestamp": [123456, 1234567, 1234568, 1234569],
+                                   'value': [43.3, 53.3, 63.3, 83.3]})
+
+        pd.testing.assert_frame_equal(expectedDF, df)
+        self.assertEqual(removed, False)
+
+    def test_remove_row_range_database_doesnt_exist(self):
+
+        db = DBOps('/usr/test_db.sql')   # Bad db name
+        removed = db.removeRowRange('not_important', 'value', 63.3, 63.3)
+        self.assertEqual(removed, False)
+
+    def insertFourUniqueEntries(self, newtablename):
+        data = [123456, 43.3]
+        self.db.append(newtablename, data)
+        data = [1234567, 53.3]
+        self.db.append(newtablename, data)
+        data = [1234568, 63.3]
+        self.db.append(newtablename, data)
+        data = [1234569, 83.3]
+        self.db.append(newtablename, data)
+
 
 if __name__ == '__main__':
     unittest.main()
