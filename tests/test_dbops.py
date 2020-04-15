@@ -62,6 +62,19 @@ class DBOpsTesting(unittest.TestCase):
 
         return tablename, columns
 
+    def test_creating_a_new_table_with_columns_with_dictionary_well_formed(self):
+
+        tablename = 'test_table'
+        columns = {'timestamp': 'INTEGER', 'value': 'REAL', 'comment': 'TEXT'}
+        self.db.createTableIfNotExist(tablename, columns)
+
+        # Check for correct column names in table
+        tableColumns = self.db.con.cursor().execute("PRAGMA table_info({})".format(tablename)).fetchall()
+        expectedColumns = [key for key in sorted(columns.keys())]
+        self.assertEqual(len(tableColumns), len(expectedColumns))
+        for i in range(len(expectedColumns)):
+            self.assertEqual(tableColumns[i][1], expectedColumns[i])
+
     def test_creating_a_new_table_which_already_exists_doesnt_overwrite_it(self):
 
         # Create a table
@@ -88,7 +101,6 @@ class DBOpsTesting(unittest.TestCase):
         tablename = 'test_table'
         columns = "columns1, CREATE, column2"
         self.db.createTableIfNotExist(tablename, columns)
-
         tableColumns = self.db.con.cursor().execute("PRAGMA table_info({})".format(tablename)).fetchall()
         self.assertEqual(len(tableColumns), 0)  # No columns should be made
 
@@ -254,6 +266,115 @@ class DBOpsTesting(unittest.TestCase):
         self.assertIs(inserted, True)
         self.assertEqual(tuple(data), insertedData)
 
+    def test_inserting_row_with_one_columns_passed_data_is_dict(self):
+        newtablename = 'test_table'
+        columns = {"timestamp": "INTEGER"}
+        self.db.createTableIfNotExist(newtablename, columns)
+        data = {"timestamp": 123456}
+
+        inserted = self.db.append(newtablename, data)
+        insertedData = self.db.con.cursor().execute(
+            "SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
+
+        self.assertIs(inserted, True)
+        self.assertEqual(data['timestamp'], insertedData[0])
+
+    def test_inserting_row_with_multiple_columns_passed_data_is_dict(self):
+        newtablename = 'test_table'
+        columns = {"timestamp": "INTEGER", 'value': 'REAL'}
+        self.db.createTableIfNotExist(newtablename, columns)
+        data = {"timestamp": 123456, 'value': 12.2}
+
+        inserted = self.db.append(newtablename, data)
+        insertedData = self.db.con.cursor().execute(
+            "SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
+
+        self.assertIs(inserted, True)
+        self.assertEqual(data['timestamp'], insertedData[0])
+        self.assertEqual(data['value'], insertedData[1])
+
+    def test_inserting_row_with_multiple_columns_passed_data_is_dict_out_of_order(self):
+        newtablename = 'test_table'
+        columns = {"timestamp": "INTEGER", 'value': 'REAL'}
+        self.db.createTableIfNotExist(newtablename, columns)
+        data = {"value": 12.2, "timestamp": 123456}
+
+        inserted = self.db.append(newtablename, data)
+        insertedData = self.db.con.cursor().execute(
+            "SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
+
+        self.assertIs(inserted, True)
+        self.assertEqual(data['timestamp'], insertedData[0])
+        self.assertEqual(data['value'], insertedData[1])
+
+    def test_inserting_row_with_multiple_columns_passed_data_is_dict_bad_key_for_column(self):
+        newtablename = 'test_table'
+        columns = {"timestamp": "INTEGER", 'value': 'REAL'}
+        self.db.createTableIfNotExist(newtablename, columns)
+        data = {"timestamp": 123456, 'badKey': 12.2}
+
+        inserted = self.db.append(newtablename, data)
+        self.assertIs(inserted, False)
+
+    def test_inserting_row_with_multiple_columns_passed_data_is_dict_of_wrong_length(self):
+        newtablename = 'test_table'
+        columns = {"timestamp": "INTEGER"}
+        self.db.createTableIfNotExist(newtablename, columns)
+        data = {"timestamp": 123456, 'badKey': 12.2}
+
+        inserted = self.db.append(newtablename, data)
+        self.assertIs(inserted, False)
+
+    def test_inserting_row_with_multiple_columns_passed_data_is_dataframe(self):
+        newtablename = 'test_table'
+        columns = {"timestamp": "INTEGER", 'value': "REAL"}
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = pd.DataFrame({"timestamp": [123456, 1234567, 1234568, 1234569],
+                            'value': [43.3, 53.3, 63.3, 83.3]})
+
+        inserted = self.db.append(newtablename, data)
+        read = self.db.table2Df(newtablename)
+
+        self.assertIs(inserted, True)
+        pd.testing.assert_frame_equal(data, read)
+
+    def test_inserting_row_with_multiple_columns_passed_data_is_dataframe_out_of_order(self):
+        newtablename = 'test_table'
+        columns = {"timestamp": "INTEGER", 'value': "REAL"}
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = pd.DataFrame({"value": [123456, 1234567, 1234568, 1234569],
+                            'real': [43.3, 53.3, 63.3, 83.3]})
+
+        inserted = self.db.append(newtablename, data)
+
+        self.assertIs(inserted, False)
+
+    def test_inserting_row_with_multiple_columns_passed_data_is_dataframe_with_one_columns(self):
+        newtablename = 'test_table'
+        columns = {"timestamp": "INTEGER"}
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = pd.DataFrame({"timestamp": [123456, 1234567, 1234568, 1234569]})
+
+        inserted = self.db.append(newtablename, data)
+        read = self.db.table2Df(newtablename)
+
+        self.assertIs(inserted, True)
+        pd.testing.assert_frame_equal(data, read)
+
+    def test_inserting_row_with_multiple_columns_passed_data_is_dataframe_with_wrong_columns(self):
+        newtablename = 'test_table'
+        columns = {"timestamp": "INTEGER", 'value': "REAL"}
+        self.db.createTableIfNotExist(newtablename, columns)
+
+        data = pd.DataFrame({"timestamp": [123456, 1234567, 1234568, 1234569],
+                            'wrong_column': [43.3, 53.3, 63.3, 83.3]})
+
+        inserted = self.db.append(newtablename, data)
+        self.assertIs(inserted, False)
+
     def test_inserting_row_with_one_columns_passed_data_is_one_column_type_is_not_list(self):
         newtablename = 'test_table'
         columns = "timestamp"
@@ -261,8 +382,6 @@ class DBOpsTesting(unittest.TestCase):
         data = 123456
 
         inserted = self.db.append(newtablename, data)
-        insertedData = self.db.con.cursor().execute(
-            "SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(newtablename)).fetchone()
 
         self.assertIs(inserted, False)
 
@@ -301,7 +420,8 @@ class DBOpsTesting(unittest.TestCase):
         self.db.printTable(newtablename)
         sys.stdout = old_stdout
 
-        expectedOutput = str(tuple(data))
+        expectedOutput = ('\t\t'.join(self.db.getColumnNames(newtablename))) + '\n'
+        expectedOutput = expectedOutput + ('\t\t'.join(str(x) for x in data))
         self.assertEqual(expectedOutput, printOutput.getvalue().strip('\n'))
 
     def test_print_a_table_with_multiple_entries(self):
@@ -317,7 +437,9 @@ class DBOpsTesting(unittest.TestCase):
         self.db.printTable(newtablename)
         sys.stdout = old_stdout
 
-        expectedOutput = str(tuple(data)) + "\n" + str(tuple(data))
+        expectedOutput = ('\t\t'.join(self.db.getColumnNames(newtablename))) + '\n'
+        expectedOutput = expectedOutput + ('\t\t'.join(str(x) for x in data)) + '\n'
+        expectedOutput = expectedOutput + ('\t\t'.join(str(x) for x in data))
         self.assertEqual(expectedOutput, printOutput.getvalue().strip('\n'))
 
     def test_print_table_with_no_entries(self):
@@ -331,7 +453,7 @@ class DBOpsTesting(unittest.TestCase):
         self.db.printTable(newtablename)
         sys.stdout = old_stdout
 
-        expectedOutput = ''
+        expectedOutput = ('\t\t'.join(self.db.getColumnNames(newtablename)))
         self.assertEqual(expectedOutput, printOutput.getvalue().strip('\n'))
 
     def test_print_table_with_no_database(self):
@@ -447,8 +569,8 @@ class DBOpsTesting(unittest.TestCase):
         self.db.append(newtablename, lastEntry)
 
         lastStoredEntry = self.db.getLastTimeEntry(newtablename)
-        expectedEntry = tuple(lastStoredEntry)
-        self.assertEqual(lastStoredEntry[0], expectedEntry[0])
+        expectedEntry = {'timestamp': lastEntry[0], 'value': lastEntry[1]}
+        self.assertEqual(expectedEntry, lastStoredEntry)
 
     def test_getting_last_timestamp_entry_added_out_of_order(self):
 
@@ -464,8 +586,8 @@ class DBOpsTesting(unittest.TestCase):
         self.db.append(newtablename, data)
 
         lastStoredEntry = self.db.getLastTimeEntry(newtablename)
-        expectedEntry = tuple(lastStoredEntry)
-        self.assertEqual(lastStoredEntry[0], expectedEntry[0])
+        expectedEntry = {'timestamp': lastEntry[0], 'value': lastEntry[1]}
+        self.assertEqual(expectedEntry, lastStoredEntry)
 
     def test_getting_last_timestamp_entry_from_empty_table(self):
 

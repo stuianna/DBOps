@@ -99,10 +99,16 @@ class DBOps():
         if self.__checkDatabaseIsInitialised() is False:
             return []
 
+        if type(columns) is dict:
+            columnString = ''
+            for key in sorted(columns.keys()):
+                columnString = columnString + key + ' ' + str(columns[key]) + ','
+            columns = columnString.strip(',')
+
         cur = self.con.cursor()
         try:
             cur.execute("CREATE TABLE IF NOT EXISTS {}({})".format(tableName, columns))
-        except sq.OperationalError:
+        except sq.OperationalError as e:
             log.error("Trying to create table with illegle name/s table: {} column: {}".format(tableName, columns))
             return []
         self.con.commit()
@@ -164,8 +170,9 @@ class DBOps():
 
         cur = self.con.cursor()
         try:
+            print('\t\t'.join(self.getColumnNames(table)))
             for row in cur.execute("SELECT * FROM {}".format(table)):
-                print(row)
+                print('\t\t'.join(str(x) for x in list(row)))
         except Exception as e:
             logging.error("Exception {} when trying to print table \
                             {}".format(e, table))
@@ -205,7 +212,11 @@ class DBOps():
 
         lastEntry = entry.fetchall()
         if len(lastEntry) > 0:
-            return lastEntry
+            columns = self.getColumnNames(table)
+            lastEntryDict = dict()
+            for i, col in enumerate(columns):
+                lastEntryDict[col] = lastEntry[0][i]
+            return lastEntryDict
         else:
             return dict()
 
@@ -302,22 +313,42 @@ class DBOps():
         self.con.commit()
         return True
 
+    # For list the order must match the order when the table was created, dictionary creation is automatically sorted
+    # For dictionary, the order doesn't matter, but keys must be same as columns
+    # For datafram, the order doesn't matter, but column names must match database's
     def append(self, table, values):
 
         if self.__checkDatabaseIsInitialised() is False:
             return False
 
-        if type(values) is not list:
+        if type(values) is list:
+            insertedValues = tuple(values)
+            placeHolder = ",".join(["(?)" for i in range(len(values))])
+        elif type(values) is dict:
+            if list(sorted(values.keys())) != self.getColumnNames(table):
+                return False
+            insertedValues = tuple(values[x] for x in sorted(values.keys()))
+            placeHolder = ",".join(["(?)" for i in range(len(values))])
+        elif type(values) is pd.DataFrame:
+            if sorted(values.columns) != self.getColumnNames(table):
+                return False
+            dfDict = values.to_dict(orient='records')
+            insertedValues = []
+            for row in dfDict:
+                insertedValues.append(tuple(row[x] for x in sorted(row.keys())))
+            placeHolder = ",".join(["(?)" for i in range(len(values.columns))])
+        else:
             log.error("Trying to insert data into table {} \
                         which is not of type list. Passed type {}".format(
                             table, type(values)))
             return False
 
-        tupleList = tuple(values)
-        placeHolder = ",".join(["(?)" for i in range(len(values))])
         cur = self.con.cursor()
         try:
-            cur.execute("INSERT INTO {} values({})".format(table, placeHolder), tupleList)
+            if any(isinstance(i, tuple) for i in insertedValues):
+                cur.executemany("INSERT INTO {} values({})".format(table, placeHolder), insertedValues)
+            else:
+                cur.execute("INSERT INTO {} values({})".format(table, placeHolder), insertedValues)
         except sq.OperationalError as e:
             log.error("Exception {} when inserting data into table {}. \
                       Possible data length mismatch, invalid table".format(
