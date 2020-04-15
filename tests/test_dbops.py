@@ -504,14 +504,7 @@ class DBOpsTesting(unittest.TestCase):
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
 
-        data = [123456, 43.3]
-        self.db.append(newtablename, data)
-        data = [1234567, 53.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 83.3]
-        self.db.append(newtablename, data)
+        self.insertFourUniqueEntries(newtablename)
 
         df = self.db.getRowRange(newtablename, 'value', 50, 70)
         expectedDF = pd.DataFrame({"timestamp": [1234567, 1234568], 'value': [53.3, 63.3]})
@@ -523,14 +516,7 @@ class DBOpsTesting(unittest.TestCase):
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
 
-        data = [123456, 43.3]
-        self.db.append(newtablename, data)
-        data = [1234567, 53.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 83.3]
-        self.db.append(newtablename, data)
+        self.insertFourUniqueEntries(newtablename)
 
         df = self.db.getRowRange(newtablename, 'value', 53.3, 63.3)
         expectedDF = pd.DataFrame({"timestamp": [1234567, 1234568], 'value': [53.3, 63.3]})
@@ -542,14 +528,7 @@ class DBOpsTesting(unittest.TestCase):
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
 
-        data = [123456, 43.3]
-        self.db.append(newtablename, data)
-        data = [1234567, 53.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 83.3]
-        self.db.append(newtablename, data)
+        self.insertFourUniqueEntries(newtablename)
 
         df = self.db.getRowRange(newtablename, 'value', 13.3, 163.3)
         expectedDF = pd.DataFrame({"timestamp": [123456, 1234567, 1234568, 1234568],
@@ -582,14 +561,7 @@ class DBOpsTesting(unittest.TestCase):
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
 
-        data = [123456, 43.3]
-        self.db.append(newtablename, data)
-        data = [1234567, 53.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 83.3]
-        self.db.append(newtablename, data)
+        self.insertFourUniqueEntries(newtablename)
 
         df = self.db.getRowRange(newtablename, 'value', 13.3, 23.3)
         self.assertEqual(len(df), 0)
@@ -600,14 +572,7 @@ class DBOpsTesting(unittest.TestCase):
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
 
-        data = [123456, 43.3]
-        self.db.append(newtablename, data)
-        data = [1234567, 53.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 83.3]
-        self.db.append(newtablename, data)
+        self.insertFourUniqueEntries(newtablename)
 
         df = self.db.getRowRange(newtablename, 'value', 63.3, 63.3)
 
@@ -637,14 +602,7 @@ class DBOpsTesting(unittest.TestCase):
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
 
-        data = [123456, 43.3]
-        self.db.append(newtablename, data)
-        data = [1234567, 53.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 83.3]
-        self.db.append(newtablename, data)
+        self.insertFourUniqueEntries(newtablename)
 
         df = self.db.getRowRange('bad_table_name', 'value', 12, 89)
         self.assertIs(df, None)
@@ -655,14 +613,7 @@ class DBOpsTesting(unittest.TestCase):
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
 
-        data = [123456, 43.3]
-        self.db.append(newtablename, data)
-        data = [1234567, 53.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 83.3]
-        self.db.append(newtablename, data)
+        self.insertFourUniqueEntries(newtablename)
 
         df = self.db.getRowRange(newtablename, 'not_a_column', 12, 89)
         self.assertIs(df, None)
@@ -680,14 +631,7 @@ class DBOpsTesting(unittest.TestCase):
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
 
-        data = [123456, 43.3]
-        self.db.append(newtablename, data)
-        data = [1234567, 53.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 83.3]
-        self.db.append(newtablename, data)
+        self.insertFourUniqueEntries(newtablename)
 
         df = self.db.getRow(newtablename, 'value', 63.3)
 
@@ -722,14 +666,7 @@ class DBOpsTesting(unittest.TestCase):
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
 
-        data = [123456, 43.3]
-        self.db.append(newtablename, data)
-        data = [1234567, 53.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
-        data = [1234568, 63.3]
-        self.db.append(newtablename, data)
+        self.insertFourUniqueEntries(newtablename)
 
         df = self.db.getRow(newtablename, 'value', 3.3)
 
@@ -816,7 +753,6 @@ class DBOpsTesting(unittest.TestCase):
         newtablename = 'test_table'
         columns = "timestamp, value"
         self.db.createTableIfNotExist(newtablename, columns)
-
         data = [123456, 43.3]
         self.db.append(newtablename, data)
         data = [1234567, 53.3]
