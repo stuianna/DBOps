@@ -89,7 +89,7 @@ class DBOpsTesting(unittest.TestCase):
         self.assertEqual(len(tableTuples), 1)
         self.assertEqual(tableTuples[0][0], tablename)
 
-        # Check for correct column names in table
+# Check for correct column names in table
         tableColumns = self.db.con.cursor().execute("PRAGMA table_info({})".format(tablename)).fetchall()
         expectedColumns = columns.split(', ')
         self.assertEqual(len(tableColumns), len(expectedColumns))
@@ -119,12 +119,34 @@ class DBOpsTesting(unittest.TestCase):
         createdColumns = self.db.create_table(tablename, columns)
         self.assertEqual(len(createdColumns), 0)
 
+    def test_creating_a_new_table_from_a_dataframe(self):
+
+        data = pd.DataFrame({"timestamp": [123456, 1234567, 1234568, 1234569],
+                            'value': [43.3, 53.3, 63.3, 83.3]})
+
+        table_name = 'new_table'
+        columns = self.db.create_table(table_name, data)
+        tables = self.db.get_table_names()
+        contents = self.db.table_to_df(table_name)
+
+        self.assertEqual(tables, [table_name])
+        self.assertEqual(columns, ['timestamp', 'value'])
+
+        pd.testing.assert_frame_equal(data, contents)
+
+    def test_try_to_create_table_from_empty_dataframe(self):
+
+        data = pd.DataFrame()
+        table_name = 'new_table'
+        columns = self.db.create_table(table_name, data)
+        self.assertEqual(columns, [])
+
     def test_getting_table_names_if_one_table_exists(self):
 
         newtablename = 'test_table'
         columns = "columns1, columns2, column2"
         self.db.create_table(newtablename, columns)
-        tableNames = self.db.get_table_namess()
+        tableNames = self.db.get_table_names()
         self.assertEqual(tableNames[0], newtablename)
 
     def test_getting_table_names_if_more_than_one_table_exists(self):
@@ -135,18 +157,18 @@ class DBOpsTesting(unittest.TestCase):
         columns = "columns1, columns2, column2"
         self.db.create_table(newtablename, columns)
         self.db.create_table(newtablename_2, columns)
-        tableNames = self.db.get_table_namess()
+        tableNames = self.db.get_table_names()
         self.assertEqual(tableNames, tableList)
 
     def test_getting_table_names_if_no_tables_exist(self):
 
-        tableNames = self.db.get_table_namess()
+        tableNames = self.db.get_table_names()
         self.assertEqual(tableNames, [])
 
     def test_getting_table_names_if_no_database_exists(self):
 
         db = DBOps('/usr/test_db.sql')   # Bad db name
-        tableNames = db.get_table_namess()
+        tableNames = db.get_table_names()
         self.assertEqual(tableNames, [])
 
     def test_getting_columns_names_with_one_column(self):
@@ -207,7 +229,7 @@ class DBOpsTesting(unittest.TestCase):
         self.db.create_table(newtablename, columns)
         removed = self.db.remove_table(newtablename)
         self.assertIs(removed, True)
-        self.assertEqual([], self.db.get_table_namess())
+        self.assertEqual([], self.db.get_table_names())
 
     def test_removing_a_table_which_was_not_created_has_no_effect(self):
 
@@ -216,7 +238,7 @@ class DBOpsTesting(unittest.TestCase):
         self.db.create_table(newtablename, columns)
         removed = self.db.remove_table("not_a_table_name")
         self.assertIs(removed, False)
-        self.assertEqual([newtablename], self.db.get_table_namess())
+        self.assertEqual([newtablename], self.db.get_table_names())
 
     def test_removing_a_table_with_no_database_created_does_nothing(self):
 

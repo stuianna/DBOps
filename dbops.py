@@ -90,6 +90,10 @@ class DBOps():
         table_name (str): The name of the table to create.
         columns (dict): PREFERED METHOD. A key value pair which specifies the name and datatype of the columns:
             columns = {"timestamp": "NUMERIC", 'value': "REAL"}
+        columns (DataFrame): A Pandas dataframe containing named columns and (optionally) values:
+            columns = pd.DataFrame({"timestamp": [1234567, 7654321],
+                                   'value': [43.3, 53.3]})
+
         columns (str): A comma separated string of column names and types, e.g
             columns = "timestamp NUMERIC, value REAL"
             The columns are inserted in the order presented in the String. This form of entry
@@ -104,10 +108,15 @@ class DBOps():
         if self.__check_database_is_initialised() is False:
             return []
 
+        df = None
         if type(columns) is dict:
             columnString = ''
             for key in sorted(columns.keys()):
                 columnString = columnString + key + ' ' + str(columns[key]) + ','
+            columns = columnString.strip(',')
+        elif type(columns) is pd.DataFrame:
+            columnString = ', '.join(sorted(columns.columns))
+            df = columns
             columns = columnString.strip(',')
 
         cur = self.con.cursor()
@@ -118,6 +127,10 @@ class DBOps():
                 table_name, columns, e))
             return []
         self.con.commit()
+
+        if type(df) is pd.DataFrame:
+            self.insert(table_name, df)
+
         return self.get_column_names(table_name)
 
     def remove_table(self, table_name):
@@ -144,7 +157,7 @@ class DBOps():
 
         return True
 
-    def get_table_namess(self):
+    def get_table_names(self):
         """Get a list containing all the tables which exist in the database.
 
         An empty list is returned if an error occured.
