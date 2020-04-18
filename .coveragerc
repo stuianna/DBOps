@@ -4,3 +4,5 @@ source = .
 omit =
 	venv/*
 	tests/*
+	setup.py
+	**/__init__.py

@@ -2,3 +2,6 @@ tags
 __pycache__
 venv/
 .coverage
+dist/
+*.egg-info
+build/

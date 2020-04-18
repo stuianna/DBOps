@@ -4,7 +4,7 @@
 
 # DBOps
 
-Python class helper for sqlite databases.
+Python class helper for sqlite3 databases.
 
 Example: Create, read and remove a table working with just dataframes.
 
