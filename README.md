@@ -8,25 +8,31 @@ Python class helper for sqlite databases.
 
 Example: Create a table, add an entry and return it as a Pandas dataframe.
 
-```
+```python
+import dbops
+
+table_name = 'temperature'
+columns = {'timestamp': 'NUMERIC', 'celsius': 'REAL'}
+
 # Create a class instance for a single database
-database = DBOps('database.db')
+database = DBOps(table_name)
 
 # Add a table to the database
-database.createTableIfNotExist('my_table','column_1 NUMERIC, column_2 TEXT, column_3 TEXT')
+database.create_table(table_name,columns)
 
 # Get all the tables in the database
-database.getTableNames()
+all_tables = database.get_table_names()
 
 # Add an entry to the database
-database.append('my_table',['col_entry_1, col_entry_2, col_entry_3'])
+new_entry = {'timestamp': 1587222785, 'celsius': 34.2}
+database.insert(table_name, new_entry)
 
 # Return the table as a Pandas Dataframe
-database.table2Df('my_table')
+df = database.table_to_df(table_name)
 
-# Return a row based on a column query, returns entire matching row
-database.getRow('my_table','column_1','col_entry_1');
+# Return all rows based on a column query, returns matching rows as dataframe
+database.get_row(table_name, 'celsius', 34.2);
 ```
 
-Use help(DBOps) for more detailed information.
+Use help(dbops) for more detailed information.
 
