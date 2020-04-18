@@ -10,14 +10,6 @@ import os
 
 log = logging.getLogger(__name__)
 
-# TODO
-# Getting last entry should return a dictionary
-# Should be able to add entries as a dictionary
-# Docstrings for functions
-# Update general docstring
-# Great module setup for packaging
-# Update readme
-
 
 class DBOps():
     """Class for working with a single database
@@ -30,73 +22,86 @@ class DBOps():
     database = DBOps('database.db')
 
     # Add a table to the database
-    database.createTableIfNotExist('my_table','column_1 NUMERIC, \
-        column_2 TEXT, column_3 TEXT')
+    columns = {'timestamp': "NUMERIC", 'value': "REAL"}
+    table_name = 'Temperature'
+    database.create_table(table_name, columns)
 
     # Get all the tables in the database
-    database.getTableNames()
+    tables = database.get_table_namess()
 
     # Add an entry to the database
-    database.append('my_table',[13, 'col_entry_2', 'col_entry_3'])
+    temperature = {'timestamp': 1587222785, 'value': 23.2}
+    database.insert(table_name, temperature)
 
     # Return the table as a Pandas Dataframe
-    database.table2Df('my_table')
+    database.table_to_df(temperature)
 
-    # Return a row based on a column query, returns entire matching row
-    database.getRow('my_table','column_1','col_entry_1');
+    # Return a row based on a column query, returning all matching entries as Dataframe.
+    column = 'value'
+    temperature = 23.2
+    df = database.get_row(table_name,column,temperature);
 
     Attributes:
         - con:sqlite3.Connection - Database class object
-
-    Methods:
-        - createTableIfNotExist(tableName,columns) - create a new table in the
-            connected database, columns are a comma seperated string.
-        - removeTable(tableName) - remove the passed table from the database.
-        - getTableNames - Returns a list of all tables in the database.
-        - getColumnNames(tableName) - Get a list of all column names contained
-            in the passed table.
-        - printTable(tableName) - print the passed table to stdout.
-        - table2Df(tableName) - return the complete table as a dataframe.
-        - getLastTimeEntry(table) - get the latest time entry in a table. Note:
-            This assumes the table contains a column labeled 'timestamp'
-        - getRowRange(table,column,minimum,maximum) Returns a dataframe of
-            entries whose column matched the specific values.
-        - getLastRows(table,maximum) - returns up to the maximum rows as a
-            dataframe. This assumes there is a column named timestamp.
-        - removeRowRange(table,column,minimum,maximum) - remove rows from the
-            table where the column values match.
-        - append(table,values) - add an entry to the database, value are passed
-            as a list. Note: the number of items in the list must match the
-            number of columns.
     """
 
     def __init__(self, db_name):
+        """Create a class instance specifying the path to the database to work with.
 
+        Success can be determined by calling object.exists()
+
+        Parameters:
+        db_name (str): Path the the sqlite3 database file.
+        """
         self.__dbName = db_name
         self.con = None
-        self.createDatabase()
+        self.__create_database()
 
-    def createDatabase(self):
+    def __create_database(self):
         try:
             self.con = sq.connect(self.__dbName)
         except Exception as e:
             log.error('Cannot connect to database {}, raised exception {}.'.format(self.__dbName, e))
 
     def exists(self):
+        """Checks if the database exists and has been connected successfuly
+
+        Returns:
+        True if the database is correctly initialised.
+        False if some error has occured and the database object is no useable.
+        """
         if os.path.exists(self.__dbName) and self.con is not None:
             return True
         return False
 
-    def __checkDatabaseIsInitialised(self):
+    def __check_database_is_initialised(self):
         if self.con is None:
             logging.error("Trying to operate on a database which doesn't exist \
                           or hasn't been initialised.")
             return False
         return True
 
-    def createTableIfNotExist(self, tableName, columns):
+    def create_table(self, table_name, columns):
+        """Add a new table to an initialised database
 
-        if self.__checkDatabaseIsInitialised() is False:
+        If the table already exists, no action is taken.
+
+        Parameters:
+        table_name (str): The name of the table to create.
+        columns (dict): PREFERED METHOD. A key value pair which specifies the name and datatype of the columns:
+            columns = {"timestamp": "NUMERIC", 'value': "REAL"}
+        columns (str): A comma separated string of column names and types, e.g
+            columns = "timestamp NUMERIC, value REAL"
+            The columns are inserted in the order presented in the String. This form of entry
+            is not recommmended to be used in conjuction with object.insert() with types of
+            dataframe or dictionary, as this method sorts the columns alphabetically.
+
+        Returns:
+        On success (creation or already exists): A list of type str containing the names of each column in the database.
+        On failure: An empty list.
+        """
+
+        if self.__check_database_is_initialised() is False:
             return []
 
         if type(columns) is dict:
@@ -107,31 +112,48 @@ class DBOps():
 
         cur = self.con.cursor()
         try:
-            cur.execute("CREATE TABLE IF NOT EXISTS {}({})".format(tableName, columns))
+            cur.execute("CREATE TABLE IF NOT EXISTS {}({})".format(table_name, columns))
         except sq.OperationalError as e:
-            log.error("Trying to create table with illegle name/s table: {} column: {}".format(tableName, columns))
+            log.error("Trying to create table with illegle name/s table: {} column: {}. Excpetion {}".format(
+                table_name, columns, e))
             return []
         self.con.commit()
-        return self.getColumnNames(tableName)
+        return self.get_column_names(table_name)
 
-    def removeTable(self, tableName):
+    def remove_table(self, table_name):
+        """Remove a table from an initialised database
 
-        if self.__checkDatabaseIsInitialised() is False:
+        Parameters:
+        table_name (str): The name of the table to remove.
+
+        Returns:
+        True: The table existed and was sucessfully removed.
+        False: An issue occured and the nothing was done.
+        """
+
+        if self.__check_database_is_initialised() is False:
             return False
 
         cur = self.con.cursor()
         try:
-            cur.execute("DROP TABLE {}".format(tableName))
+            cur.execute("DROP TABLE {}".format(table_name))
         except Exception as e:
-            log.error('Cannot remove table: {}. Exception {}.'.format(tableName, e))
+            log.error('Cannot remove table: {}. Exception {}.'.format(table_name, e))
             return False
         self.con.commit()
 
         return True
 
-    def getTableNames(self):
+    def get_table_namess(self):
+        """Get a list containing all the tables which exist in the database.
 
-        if self.__checkDatabaseIsInitialised() is False:
+        An empty list is returned if an error occured.
+
+        Returns:
+        A list of strings containing the name of each table.
+        """
+
+        if self.__check_database_is_initialised() is False:
             return []
 
         cur = self.con.cursor()
@@ -142,9 +164,16 @@ class DBOps():
             finalList.append(l[0])
         return finalList
 
-    def getColumnNames(self, table):
+    def get_column_names(self, table):
+        """Get a list containing all columns which exist for a given table.
 
-        if self.__checkDatabaseIsInitialised() is False:
+        An empty list is returned if an error occured, or the table doesn't exist.
+
+        Returns:
+        A list of strings containing the name of each column in the given table..
+        """
+
+        if self.__check_database_is_initialised() is False:
             return []
 
         cur = self.con.cursor()
@@ -163,14 +192,21 @@ class DBOps():
 
         return nameList
 
-    def printTable(self, table):
+    def print_table(self, table):
+        """Print the entire contents of a database table to stdout.
 
-        if self.__checkDatabaseIsInitialised() is False:
-            return ''
+        Nothing is printed if the table doesn't exist or an error occured.
+
+        Parameters:
+        table (str): The name of the table to print.
+        """
+
+        if self.__check_database_is_initialised() is False:
+            return None
 
         cur = self.con.cursor()
         try:
-            print('\t\t'.join(self.getColumnNames(table)))
+            print('\t\t'.join(self.get_column_names(table)))
             for row in cur.execute("SELECT * FROM {}".format(table)):
                 print('\t\t'.join(str(x) for x in list(row)))
         except Exception as e:
@@ -178,9 +214,18 @@ class DBOps():
                             {}".format(e, table))
             return None
 
-    def table2Df(self, table):
+    def table_to_df(self, table):
+        """Return the taget table as a Pandas Dataframe.
 
-        if self.__checkDatabaseIsInitialised() is False:
+        Parameters:
+        table (str): The name of the table to query.
+
+        Returns:
+        A dataframe object containing the complete table.
+        None is returned if the table doesn't exist or an error occured.
+        """
+
+        if self.__check_database_is_initialised() is False:
             return None
 
         cur = self.con.cursor()
@@ -190,13 +235,26 @@ class DBOps():
             logging.error("Exception {} when trying to return table\
                             {} as a Dataframe".format(e, table))
             return None
-        df = pd.DataFrame(cur.fetchall(), columns=self.getColumnNames(table))
+        df = pd.DataFrame(cur.fetchall(), columns=self.get_column_names(table))
         return df
 
-    # This assumes that the table contains a column named "timestamp"
-    def getLastTimeEntry(self, table):
+    def get_last_time_entry(self, table):
+        """Get the last timestamp entry from the databaase.
 
-        if self.__checkDatabaseIsInitialised() is False:
+        ATTENTION: This function assumes the database contains a column
+        named 'timestamp' of type NUMERIC, containing unix timestamps.
+
+        Parameters:
+        table (str): The name of the table to query.
+
+        Returns:
+        - The last time entry as a dictionary, containing column names as keys
+        and they entry as values.
+        - An empty dictionary if the table is empty.
+        - None if an error occured (no table, no 'timestamp' column).
+        """
+
+        if self.__check_database_is_initialised() is False:
             return None
 
         cur = self.con.cursor()
@@ -212,7 +270,7 @@ class DBOps():
 
         lastEntry = entry.fetchall()
         if len(lastEntry) > 0:
-            columns = self.getColumnNames(table)
+            columns = self.get_column_names(table)
             lastEntryDict = dict()
             for i, col in enumerate(columns):
                 lastEntryDict[col] = lastEntry[0][i]
@@ -220,11 +278,22 @@ class DBOps():
         else:
             return dict()
 
-    #  Values equal to min and max are returned
-    #  Requesting between a range of strings returns None
-    def getRowRange(self, table, column, minimum, maximum):
+    def get_row_range(self, table, column, minimum, maximum):
+        """Get a dataframe containing values of a table columns between two values (inclusive).
 
-        if self.__checkDatabaseIsInitialised() is False:
+        Parameters:
+        table (str): The name of the table to query.
+        column (str): The name of the table's column to query.
+        minimum (int,float): The minimum value (inclusive).
+        maximum (int,float): The maximum value (inclusive).
+
+        Returns:
+        - A Pandas DataFrame containing the quried value on sucess.
+        - An empty DataFrame if the table is empty.
+        - None if an error occured (No table name, no column, invalid datatype).
+        """
+
+        if self.__check_database_is_initialised() is False:
             return None
 
         cur = self.con.cursor()
@@ -234,19 +303,29 @@ class DBOps():
                     table,
                     column,
                     minimum,
-                    maximum)).fetchall(), columns=self.getColumnNames(table))
+                    maximum)).fetchall(), columns=self.get_column_names(table))
         except Exception as e:
             log.error('Cannot query rows from {}. \
                       Requested column: {}.\
                       Availabe: {}?, excpetion {}'.format(
-                          table, column, self.getColumnNames, e))
+                          table, column, self.get_column_names, e))
             return None
 
-    # Returns empty dataframe if query not found
-    # Returns none if error occured
-    def getRow(self, table, column, query):
+    def get_row(self, table, column, query):
+        """ Get a dataframe containing entries which match a queried value
 
-        if self.__checkDatabaseIsInitialised() is False:
+        Parameters:
+        table (str): The name of the table to query.
+        column (str): The name of the table's column to query.
+        query (int, float, str): The value of the column to query.
+
+        Returns:
+        - A Pandas DataFrame containing all matching values on success:
+        - An empty dataframe if the value wasn't found in the database.
+        - None if an error occured.
+        """
+
+        if self.__check_database_is_initialised() is False:
             return None
 
         cur = self.con.cursor()
@@ -255,33 +334,40 @@ class DBOps():
                 return pd.DataFrame(cur.execute(
                     "SELECT * FROM {} WHERE {} LIKE '{}'".format(
                         table, column, query)).fetchall(),
-                                    columns=self.getColumnNames(table))
+                                    columns=self.get_column_names(table))
             else:
                 return pd.DataFrame(cur.execute(
                     "SELECT * FROM {} WHERE {} = {}".format(
                         table, column, query)).fetchall(),
-                                    columns=self.getColumnNames(table))
+                                    columns=self.get_column_names(table))
         except Exception as e:
             log.error('Cannot query rows from {}. \
                       Requested column: {}. Availabe: {}?. \
                       Exception {}'.format(
-                          table, column, self.getColumnNames, e))
+                          table, column, self.get_column_names, e))
         return None
 
-    # No number return empty dataframe
-    # Negative number return whole data frame - number
-    # Non integer request return none
-    # Returns none if no timestamp column exists
-    def getLastRows(self, table, maximum):
+    def get_last_rows(self, table, maximum):
+        """Get the last n number of entries in the database as a Pandas Dataframe.
 
-        if self.__checkDatabaseIsInitialised() is False:
+        Parameters:
+        table (str): The name of the table to query.
+        maximum (int): The maximum number of entries to return. -1 can be passed
+            to return all enties.
+
+        Returns:
+        - A Pandas DataFrame containing the up to the number of entries requested.
+        - None if an error occured (no table, database not initialised, bad type for maximum.
+        """
+
+        if self.__check_database_is_initialised() is False:
             return None
 
         cur = self.con.cursor()
         try:
             return pd.DataFrame(cur.execute(
                 "SELECT * FROM {} ORDER BY timestamp DESC LIMIT {}".format(
-                    table, maximum)).fetchall(), columns=self.getColumnNames(table))
+                    table, maximum)).fetchall(), columns=self.get_column_names(table))
         except Exception as e:
             log.error('Could not get last rows from {}. \
                       Does the table have a timestamp column? \
@@ -289,11 +375,21 @@ class DBOps():
                           table, e))
         return None
 
-    # Only returns false if an error occured
-    # Return faulse if min or maxis string
-    def removeRowRange(self, table, column, minimum, maximum):
+    def remove_row_range(self, table, column, minimum, maximum):
+        """Remove a number of rows from a database table.
 
-        if self.__checkDatabaseIsInitialised() is False:
+        Parameters:
+        table (str): The name of the table to remove rows from.
+        column (str): The name of the table's column to match values to.
+        minimum (int, float): The minimum value from which a matched value is removed (inclusive).
+        maximum (int, float): The maximum value from which a matched value is removed (inclusive).
+
+        Returns:
+        True: No error occured. Items between the minimum and maximum values were removed.
+        False: An error occured (bad table, column name. Bad type for minimum or maximum)
+        """
+
+        if self.__check_database_is_initialised() is False:
             return False
 
         if type(minimum) is str or type(maximum) is str:
@@ -308,7 +404,7 @@ class DBOps():
             log.error('Cannot remove rows from {}. \
                       Requested column: {}. \
                       Availabe: {}?. Exception {}'.format(
-                          table, column, self.getColumnNames, e))
+                          table, column, self.get_column_names, e))
             return False
         self.con.commit()
         return True
@@ -316,21 +412,48 @@ class DBOps():
     # For list the order must match the order when the table was created, dictionary creation is automatically sorted
     # For dictionary, the order doesn't matter, but keys must be same as columns
     # For datafram, the order doesn't matter, but column names must match database's
-    def append(self, table, values):
+    def insert(self, table, values):
+        """Insert values into a given table.
 
-        if self.__checkDatabaseIsInitialised() is False:
+        IMPORTANT: If values is of type dict or dataframe, then the keys are sorted alphabetically
+        before they are entered into the database. Therefore when working with these types, it
+        is recommened that the table be created with the columns specified as a dictionary, as
+        these are also sorted.
+
+        Parameters:
+        table (str): The name of the table to insert the values into.
+        values (dict): A key value pair of columns:values to enter into the database table:
+            values = {'timestamp': 12345667, 'value': 12.3}
+        values (dataframe): A pandas dataframe containing the values to enter.
+            values = pd.DataFrame({"timestamp": [1234567, 7654321],
+                                   'value': [43.3, 53.3]})
+        values (list): A list of columns values to enter. The order of the list should be the same
+        order used when the table was created.
+            values = [43.3, 53.3]]
+
+        Returns:
+        True: The items were sucessfully entered into the database table.
+        False: An error occured
+            - The keys or columns of the dataframe don't match the database table's columns.
+            - The datatype of value is not a list, dict or dataframe.
+            - The table doesn't exist.
+            - The database is not initialised.
+            - Some other error (if caught).
+        """
+
+        if self.__check_database_is_initialised() is False:
             return False
 
         if type(values) is list:
             insertedValues = tuple(values)
             placeHolder = ",".join(["(?)" for i in range(len(values))])
         elif type(values) is dict:
-            if list(sorted(values.keys())) != self.getColumnNames(table):
+            if list(sorted(values.keys())) != self.get_column_names(table):
                 return False
             insertedValues = tuple(values[x] for x in sorted(values.keys()))
             placeHolder = ",".join(["(?)" for i in range(len(values))])
         elif type(values) is pd.DataFrame:
-            if sorted(values.columns) != self.getColumnNames(table):
+            if sorted(values.columns) != self.get_column_names(table):
                 return False
             dfDict = values.to_dict(orient='records')
             insertedValues = []
