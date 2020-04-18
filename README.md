@@ -2,21 +2,19 @@
 ![Codecov](https://img.shields.io/codecov/c/gh/stuianna/DBOps)
 ![GitHub](https://img.shields.io/github/license/stuianna/DBOps)
 
-# DBOps
-
 Python class helper for sqlite3 databases.
 
 Example: Create, read and remove a table working with just dataframes.
 
 ```python
-from dbops import DBOps
+from dbops.sqhelper import SQHelper
 import pandas as pd
 
 table_name = 'temperature'
 df = pd.DataFrame({"timestamp": [1587222785, 1587222786], 'celsius': [23.3, 23.9]})
 
 db = 'myDatabase.sql3'
-database = DBOps(db)
+database = SQHelper(db)
 
 # The dataframe column names are used for the table's column names. 
 # All dataframe entries are automatically inserted.
@@ -36,14 +34,14 @@ database.remove_table(table_name);
 Example: Create a table, add an entry and return it as a Pandas dataframe.
 
 ```python
-from dbops import DBOps
+from dbops.sqhelper import SQHelper
 
 db = 'myDatabase.sql3'
 table_name = 'temperature'
 columns = {'timestamp': 'NUMERIC', 'celsius': 'REAL'}
 
 # Create a class instance for a single database
-database = DBOps(db)
+database = SQHelper(db)
 
 # Add a table to the database
 database.create_table(table_name,columns)
@@ -63,5 +61,5 @@ database.get_row(table_name, 'celsius', 34.2);
 ```
 
 
-Use help(dbops) for more detailed information.
+Use help(SQHelper) for more detailed information.
 

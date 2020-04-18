@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 from io import StringIO
-from dbops import DBOps
+from dbops.sqhelper import SQHelper
 import pandas as pd
 
 test_db_name = "test_db.sql"
@@ -11,10 +11,10 @@ test_db_name = "test_db.sql"
 logging.disable(logging.CRITICAL)
 
 
-class DBOpsTesting(unittest.TestCase):
+class SQHelperTesting(unittest.TestCase):
 
     def setUp(self):
-        self.db = DBOps(test_db_name)
+        self.db = SQHelper(test_db_name)
         pass
 
     def tearDown(self):
@@ -28,17 +28,17 @@ class DBOpsTesting(unittest.TestCase):
         self.assertIs(exists, True)
 
     def test_creating_database_and_test_if_exits_bad_name_database_already_exists(self):
-        db = DBOps('tests')  # Same name as tests directory
+        db = SQHelper('tests')  # Same name as tests directory
         exists = db.exists()
         self.assertIs(exists, False)
 
     def test_creating_database_and_test_if_exits_bad_permissions(self):
-        db = DBOps('/usr/test_db.sql')
+        db = SQHelper('/usr/test_db.sql')
         exists = db.exists()
         self.assertIs(exists, False)
 
     def test_creating_database_and_test_if_exits_in_nested_directory(self):
-        db = DBOps('non/existant/directory/db_name.sql')
+        db = SQHelper('non/existant/directory/db_name.sql')
         exists = db.exists()
         self.assertIs(exists, False)
 
@@ -106,7 +106,7 @@ class DBOpsTesting(unittest.TestCase):
 
     def test_try_to_make_table_if_database_is_not_setup(self):
 
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
         tablename = 'test_table'
         columns = "column1, column2, column3"
         createdColumns = db.create_table(tablename, columns)
@@ -167,7 +167,7 @@ class DBOpsTesting(unittest.TestCase):
 
     def test_getting_table_names_if_no_database_exists(self):
 
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
         tableNames = db.get_table_names()
         self.assertEqual(tableNames, [])
 
@@ -218,7 +218,7 @@ class DBOpsTesting(unittest.TestCase):
 
     def test_getting_columns_names_with_no_database_created(self):
 
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
         columns = db.get_column_names('some_table')
         self.assertEqual(columns, [])
 
@@ -242,7 +242,7 @@ class DBOpsTesting(unittest.TestCase):
 
     def test_removing_a_table_with_no_database_created_does_nothing(self):
 
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
         removed = db.remove_table('some_name')
         self.assertIs(removed, False)
 
@@ -425,7 +425,7 @@ class DBOpsTesting(unittest.TestCase):
     def test_appending_data_when_database_not_created(self):
 
         newtablename = 'notImportant'
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
         data = [123456]
         inserted = db.insert(newtablename, data)
         self.assertIs(inserted, False)
@@ -481,7 +481,7 @@ class DBOpsTesting(unittest.TestCase):
     def test_print_table_with_no_database(self):
 
         newtablename = 'notImportant'
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
 
         old_stdout = sys.stdout
         sys.stdout = printOutput = StringIO()
@@ -571,7 +571,7 @@ class DBOpsTesting(unittest.TestCase):
     def test_getting_dataframe_from_table_no_database_made(self):
 
         newtablename = 'notImportant'
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
 
         df = db.table_to_df(newtablename)
 
@@ -636,7 +636,7 @@ class DBOpsTesting(unittest.TestCase):
 
     def test_getting_last_timestamp_entry_from_database_which_is_not_created(self):
 
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
 
         lastStoredEntry = db.get_last_time_entry("bad_table_name")
         expectedEntry = None
@@ -765,7 +765,7 @@ class DBOpsTesting(unittest.TestCase):
     def test_get_range_of_rows_with_no_created_database(self):
 
         newtablename = 'notImportant'
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
         df = db.get_row_range(newtablename, 'value', 12, 89)
         self.assertIs(df, None)
 
@@ -866,7 +866,7 @@ class DBOpsTesting(unittest.TestCase):
 
     def test_get_row_matching_value_when_table_doesnt_exist(self):
 
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
 
         df = db.get_row("doesnt_exist", 'value', '43.3')
         self.assertIs(df, None)
@@ -970,7 +970,7 @@ class DBOpsTesting(unittest.TestCase):
 
     def test_get_last_rows_database_doesnt_exist(self):
 
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
         self.insertFourUniqueEntries('not_important')
         df = db.get_last_rows('not_important', 1)
         self.assertEqual(df, None)
@@ -1080,7 +1080,7 @@ class DBOpsTesting(unittest.TestCase):
 
     def test_remove_row_range_database_doesnt_exist(self):
 
-        db = DBOps('/usr/test_db.sql')   # Bad db name
+        db = SQHelper('/usr/test_db.sql')   # Bad db name
         removed = db.remove_row_range('not_important', 'value', 63.3, 63.3)
         self.assertEqual(removed, False)
 

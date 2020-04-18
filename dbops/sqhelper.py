@@ -1,5 +1,5 @@
 """
-DBOps: Single class module for working with sqlite3 databases.
+SQHelper: Single class module for working with sqlite3 databases.
 Author Stuart Ianna
 """
 
@@ -11,7 +11,7 @@ import os
 log = logging.getLogger(__name__)
 
 
-class DBOps():
+class SQHelper():
     """Class for working with a single database
 
     The logging module is used to log errors and warnings.
@@ -19,7 +19,7 @@ class DBOps():
     Typical Usage:
 
     # Create a class instance for a single database
-    database = DBOps('database.db')
+    database = SQHelper('database.db')
 
     # Add a table to the database
     columns = {'timestamp': "NUMERIC", 'value': "REAL"}

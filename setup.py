@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="dbops",
+    name="db-ops",
     version="0.0.1",
     author="Stuart Ianna",
     author_email="stuian@protonmail.com",
@@ -21,6 +21,6 @@ setuptools.setup(
         'pandas',
         'numpy'
     ],
-    py_modules=['dbops'],
+    packages=setuptools.find_packages(),
     python_requires='>=3.6',
 )
