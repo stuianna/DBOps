@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="db-ops",
-    version="0.0.2",
+    version="0.0.3",
     author="Stuart Ianna",
     author_email="stuian@protonmail.com",
     description="Python class helper for working with sqlite3 databases and Pandas dataframes.",

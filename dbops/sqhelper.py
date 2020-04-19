@@ -55,13 +55,24 @@ class SQHelper():
         """
         self.__dbName = db_name
         self.con = None
-        self.__create_database()
+        self.create_database()
 
-    def __create_database(self):
+    def create_database(self):
+        """Create the sqlite3 database if it doesn't exist.
+
+        The database name is that which was passed when the class object was initialised.
+
+        Returns:
+        True if the data base was created.
+        False if an error occured.
+        """
+
         try:
             self.con = sq.connect(self.__dbName)
+            return True
         except Exception as e:
             log.error('Cannot connect to database {}, raised exception {}.'.format(self.__dbName, e))
+            return False
 
     def exists(self):
         """Checks if the database exists and has been connected successfuly
