@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.0.3",
     author="Stuart Ianna",
     author_email="stuian@protonmail.com",
-    description="Python class helper for working with sqlite3 databases and Pandas dataframes.",
+    description="",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/stuianna/DBOps",
@@ -20,6 +20,8 @@ setuptools.setup(
     install_requires=[
         'pandas',
         'numpy'
+        'pyrfc3339'
+        'influxdb'
     ],
     packages=setuptools.find_packages(),
     python_requires='>=3.6',
