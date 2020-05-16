@@ -1,11 +1,12 @@
 import setuptools
+exec(open('dbops/_version.py').read())
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="db-ops",
-    version="0.0.3",
+    version=__version__,
     author="Stuart Ianna",
     author_email="stuian@protonmail.com",
     description="",
@@ -19,8 +20,8 @@ setuptools.setup(
     ],
     install_requires=[
         'pandas',
-        'numpy'
-        'pyrfc3339'
+        'numpy',
+        'pyrfc3339',
         'influxdb'
     ],
     packages=setuptools.find_packages(),
