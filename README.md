@@ -130,3 +130,9 @@ True
 ```
 
 Use help(InfluxHelper) for more detailed information.
+
+## Version History
+**0.1.0**:
+- Added interface for Influx Databases
+- Added some timestamp conversion utilities
+- Improved documentation
