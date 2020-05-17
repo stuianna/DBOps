@@ -106,6 +106,16 @@ class InfluxHelper():
             return []
         return [db['name'] for db in self.client.get_list_database()]
 
+    def remove_measurement(self, measurement_name):
+        if self.client is None or type(measurement_name) is not str:
+            return False
+
+        if measurement_name not in self.get_measurement_names():
+            return False
+
+        self.client.drop_measurement(measurement_name)
+        return True
+
     def get_measurement_names(self):
         """ Get the names of all measurements in the connected database
 
@@ -116,7 +126,7 @@ class InfluxHelper():
             return []
         return [m['name'] for m in self.client.get_list_measurements()]
 
-    def get_last_time_entry(self, measurement, field, tag, tag_value, as_unix=False):
+    def get_last_time_entry(self, measurement, field, tag=None, tag_value=None, as_unix=False):
         """ Get the last time entry for a given query
 
         Parameters:
@@ -133,8 +143,11 @@ class InfluxHelper():
         """
         if self.client is None:
             return None
-        lastTimeEntry = self.client.query("SELECT last({}) FROM {} WHERE {} ='{}'".format(
-            field, measurement, tag, tag_value))
+        if tag is None or tag_value is None:
+            lastTimeEntry = self.client.query("SELECT last({}) FROM {}".format(field, measurement))
+        else:
+            lastTimeEntry = self.client.query("SELECT last({}) FROM {} WHERE {} ='{}'".format(
+                field, measurement, tag, tag_value))
         dataPoints = lastTimeEntry.get_points()
         try:
             data = next(dataPoints)
@@ -181,7 +194,11 @@ class InfluxHelper():
             if single_entry is None:
                 return False
             all_entries.append(single_entry)
-        return self.client.write_points(all_entries)
+        try:
+            return self.client.write_points(all_entries)
+        except Exception as e:
+            log.error("Failed to add datapoints for dataframe entry. Exception {}".format(e))
+            return False
 
     def __insert_dict_entry(self, measurement, data, field_keys, tag_keys, use_timestamp):
 

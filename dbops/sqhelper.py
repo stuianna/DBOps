@@ -44,7 +44,6 @@ class SQHelper():
     Attributes:
         - con:sqlite3.Connection - Database class object
     """
-
     def __init__(self, db_name):
         """Create a class instance specifying the path to the database to work with.
 
@@ -87,8 +86,7 @@ class SQHelper():
 
     def __check_database_is_initialised(self):
         if self.con is None:
-            logging.error("Trying to operate on a database which doesn't exist \
-                          or hasn't been initialised.")
+            logging.error("Trying to operate on a database which doesn't exist " "or hasn't been initialised.")
             return False
         return True
 
@@ -162,7 +160,7 @@ class SQHelper():
         try:
             cur.execute("DROP TABLE {}".format(table_name))
         except Exception as e:
-            log.error('Cannot remove table: {}. Exception {}.'.format(table_name, e))
+            log.error('Cannot remove table: {}. Exception: {}.'.format(table_name, e))
             return False
         self.con.commit()
 
@@ -182,8 +180,7 @@ class SQHelper():
 
         cur = self.con.cursor()
         finalList = []
-        tupleList = cur.execute(
-            "SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
+        tupleList = cur.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
         for l in tupleList:
             finalList.append(l[0])
         return finalList
@@ -204,8 +201,7 @@ class SQHelper():
         try:
             cur.execute("PRAGMA table_info({})".format(table))
         except Exception as e:
-            logging.error("Exception {} when trying to get column \
-                            names for table {}".format(e, table))
+            log.error("Exception: {} when trying to get column " "names for table {}".format(e, table))
             return []
 
         fullList = cur.fetchall()
@@ -234,8 +230,7 @@ class SQHelper():
             for row in cur.execute("SELECT * FROM {}".format(table)):
                 print('\t\t'.join(str(x) for x in list(row)))
         except Exception as e:
-            logging.error("Exception {} when trying to print table \
-                            {}".format(e, table))
+            log.error("Exception: {} when trying to print table " "{}".format(e, table))
             return None
 
     def table_to_df(self, table):
@@ -256,8 +251,7 @@ class SQHelper():
         try:
             cur.execute("SELECT * FROM {}".format(table))
         except Exception as e:
-            logging.error("Exception {} when trying to return table\
-                            {} as a Dataframe".format(e, table))
+            log.error("Exception: {} when trying to return table " "{} as a Dataframe".format(e, table))
             return None
         df = pd.DataFrame(cur.fetchall(), columns=self.get_column_names(table))
         return df
@@ -283,13 +277,11 @@ class SQHelper():
 
         cur = self.con.cursor()
         try:
-            entry = cur.execute(
-                "SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(
-                    table))
+            entry = cur.execute("SELECT * FROM {} ORDER BY timestamp DESC LIMIT 1".format(table))
         except Exception as e:
-            log.error('Cannot get last time entry from {}.\
-                      Does the table have a timestamp column? \
-                      Exception {}'.format(table, e))
+            log.error("Cannot get last time entry from {}. "
+                      "Does the table have a timestamp column? "
+                      "Exception: {}".format(table, e))
             return None
 
         lastEntry = entry.fetchall()
@@ -322,17 +314,13 @@ class SQHelper():
 
         cur = self.con.cursor()
         try:
-            return pd.DataFrame(cur.execute(
-                "SELECT * FROM {} WHERE {} BETWEEN {} AND {}".format(
-                    table,
-                    column,
-                    minimum,
-                    maximum)).fetchall(), columns=self.get_column_names(table))
+            return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} BETWEEN {} AND {}".format(
+                table, column, minimum, maximum)).fetchall(),
+                                columns=self.get_column_names(table))
         except Exception as e:
-            log.error('Cannot query rows from {}. \
-                      Requested column: {}.\
-                      Availabe: {}?, excpetion {}'.format(
-                          table, column, self.get_column_names, e))
+            log.error("Cannot query rows from {}. "
+                      "Requested column: {}. "
+                      "Availabe: {}. Excpetion {}".format(table, column, self.get_column_names(table), e))
             return None
 
     def get_row(self, table, column, query):
@@ -355,20 +343,17 @@ class SQHelper():
         cur = self.con.cursor()
         try:
             if type(query) is str:
-                return pd.DataFrame(cur.execute(
-                    "SELECT * FROM {} WHERE {} LIKE '{}'".format(
-                        table, column, query)).fetchall(),
+                return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} LIKE '{}'".format(table, column,
+                                                                                             query)).fetchall(),
                                     columns=self.get_column_names(table))
             else:
-                return pd.DataFrame(cur.execute(
-                    "SELECT * FROM {} WHERE {} = {}".format(
-                        table, column, query)).fetchall(),
+                return pd.DataFrame(cur.execute("SELECT * FROM {} WHERE {} = {}".format(table, column,
+                                                                                        query)).fetchall(),
                                     columns=self.get_column_names(table))
         except Exception as e:
-            log.error('Cannot query rows from {}. \
-                      Requested column: {}. Availabe: {}?. \
-                      Exception {}'.format(
-                          table, column, self.get_column_names, e))
+            log.error("Cannot query rows from {}. "
+                      "Requested column: {}. Availabe: {}. "
+                      "Exception: {}".format(table, column, self.get_column_names(table), e))
         return None
 
     def get_last_rows(self, table, maximum):
@@ -389,14 +374,13 @@ class SQHelper():
 
         cur = self.con.cursor()
         try:
-            return pd.DataFrame(cur.execute(
-                "SELECT * FROM {} ORDER BY timestamp DESC LIMIT {}".format(
-                    table, maximum)).fetchall(), columns=self.get_column_names(table))
+            return pd.DataFrame(cur.execute("SELECT * FROM {} ORDER BY timestamp DESC LIMIT {}".format(
+                table, maximum)).fetchall(),
+                                columns=self.get_column_names(table))
         except Exception as e:
-            log.error('Could not get last rows from {}. \
-                      Does the table have a timestamp column? \
-                      Exception {}'.format(
-                          table, e))
+            log.error("Could not get last rows from {}. "
+                      "Does the table have a timestamp column? "
+                      "Exception: {}".format(table, e))
         return None
 
     def remove_row_range(self, table, column, minimum, maximum):
@@ -421,14 +405,11 @@ class SQHelper():
 
         cur = self.con.cursor()
         try:
-            cur.execute(
-                "DELETE FROM {} WHERE {} BETWEEN {} AND {}".format(
-                    table, column, minimum, maximum))
+            cur.execute("DELETE FROM {} WHERE {} BETWEEN {} AND {}".format(table, column, minimum, maximum))
         except Exception as e:
-            log.error('Cannot remove rows from {}. \
-                      Requested column: {}. \
-                      Availabe: {}?. Exception {}'.format(
-                          table, column, self.get_column_names, e))
+            log.error("Cannot remove rows from {}. "
+                      "Requested column: {}. "
+                      "Availabe: {}?. Exception: {}".format(table, column, self.get_column_names(table), e))
             return False
         self.con.commit()
         return True
@@ -485,9 +466,8 @@ class SQHelper():
                 insertedValues.append(tuple(row[x] for x in sorted(row.keys())))
             placeHolder = ",".join(["(?)" for i in range(len(values.columns))])
         else:
-            log.error("Trying to insert data into table {} \
-                        which is not of type list. Passed type {}".format(
-                            table, type(values)))
+            log.error("Trying to insert data into table {} "
+                      "which is not of type list. Passed type {}".format(table, type(values)))
             return False
 
         cur = self.con.cursor()
@@ -497,9 +477,8 @@ class SQHelper():
             else:
                 cur.execute("INSERT INTO {} values({})".format(table, placeHolder), insertedValues)
         except sq.OperationalError as e:
-            log.error("Exception {} when inserting data into table {}. \
-                      Possible data length mismatch, invalid table".format(
-                e, table))
+            log.error("Exception: {} when inserting data into table {}. "
+                      "Possible data length mismatch, invalid table".format(e, table))
             return False
         self.con.commit()
         return True

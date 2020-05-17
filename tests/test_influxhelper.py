@@ -97,6 +97,11 @@ class SQHelperTesting(unittest.TestCase):
         success = self.db.insert(measurement, data, field_keys=fields, tag_keys=tags)
         self.assertIs(success, False)
 
+    def test_get_last_time_entry_when_measurement_doesnt_exist_returns_none(self):
+        self.insert_single_good_entry()
+        last_time_entry = self.db.get_last_time_entry('Doesnt_exit', 'temperature', 'room', 'kitchen')
+        self.assertEqual(last_time_entry, None)
+
     def test_get_last_time_entry_with_invalid_parameter_returns_none(self):
         self.insert_single_good_entry()
         last_time_entry = self.db.get_last_time_entry('Bad', 'temperature', 'room', 'kitchen')
@@ -185,3 +190,28 @@ class SQHelperTesting(unittest.TestCase):
         self.create_bad_db()
         measurements = self.db.get_measurement_names()
         self.assertEqual(measurements, [])
+
+    def test_remove_measurement_no_database_object(self):
+        self.insert_dataframe_two_entries()
+        olddb = self.db
+        self.create_bad_db()
+        success = self.db.remove_measurement("Environment")
+        self.assertEqual(success, False)
+        self.db = olddb
+
+    def test_remove_measurement_which_doesnt_exist(self):
+        success = self.db.remove_measurement("Environment")
+        self.assertEqual(success, False)
+
+    def test_remove_measurement_which_does_exist(self):
+        self.insert_dataframe_two_entries()
+        success = self.db.remove_measurement("Environment")
+        measurements = self.db.get_measurement_names()
+        self.assertEqual("Environment" in measurements, False)
+        self.assertEqual(success, True)
+
+    def test_remove_measurement_when_passed_type_is_not_str(self):
+        measurement = None
+        self.insert_dataframe_two_entries()
+        success = self.db.remove_measurement(measurement)
+        self.assertEqual(success, False)
